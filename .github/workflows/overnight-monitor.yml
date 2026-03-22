@@ -3,12 +3,18 @@ name: Overnight Market Monitor
 on:
   schedule:
     # 北京时间 07:30 = UTC 23:30 (前一天)
-    # cron 0-4 = 周日至周四 UTC 23:30，对应北京周一至周五 07:30
-    - cron: "30 23 * * 0-4"   # 周日至周四 UTC 23:30（对应北京周一至周五 07:30）
+    # cron 1-5 = 周一至周五 UTC 23:30，对应北京周二至周六 07:30
+    # 覆盖美股交易日（周一~周五）：周一 UTC 运行 → 看周一窗口，以此类推
+    - cron: "30 23 * * 1-5"   # 周一至周五 UTC 23:30（对应北京周二至周六 07:30）
 
   # 允许手动触发（用于测试）
   workflow_dispatch:
     inputs:
+      target_date:
+        description: "目标日期 YYYY-MM-DD（留空=自动计算昨夜，填写则回测该日期的隔夜窗口）"
+        required: false
+        default: ""
+        type: string
       dry_run:
         description: "Dry run (仅采集，不推送 WeCom)"
         required: false
@@ -58,6 +64,7 @@ jobs:
           AI_MODEL:          ${{ vars.AI_MODEL || 'gpt-4o' }}
           WECOM_WEBHOOK_URL: ${{ github.event.inputs.dry_run == 'true' && '' || secrets.WECOM_WEBHOOK_URL }}
           DB_PATH:           data/overnight.db
+          OVERRIDE_DATE:     ${{ github.event.inputs.target_date }}
         run: python src/main.py
 
       # ── 上传 JSON 快照作为 Artifact（可在 Actions 界面下载） ──────────

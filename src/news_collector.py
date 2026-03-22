@@ -214,8 +214,8 @@ def collect_overnight(
         # 当前北京时间已过 06:00：窗口是 今天20:00(昨夜) → 今天06:00
         start_bjt = now_bjt.replace(hour=start_hour_bjt, minute=0, second=0, microsecond=0)
         end_bjt   = now_bjt.replace(hour=end_hour_bjt, minute=0, second=0, microsecond=0)
-        # 如果现在时间 > start_hour，start应是昨天
-        if now_bjt.hour >= start_hour_bjt:
+        # 如果现在时间还没到今晚 start_hour，则 start 是昨天
+        if now_bjt.hour < start_hour_bjt:
             start_bjt = (now_bjt - timedelta(days=1)).replace(
                 hour=start_hour_bjt, minute=0, second=0, microsecond=0
             )

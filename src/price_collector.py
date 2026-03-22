@@ -180,7 +180,7 @@ def collect_overnight_prices(api_key: str = POLYGON_API_KEY) -> dict:
     if now_bjt.hour >= OVERNIGHT_END_HOUR_BJT:
         end_bjt   = now_bjt.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
         start_bjt = now_bjt.replace(hour=OVERNIGHT_START_HOUR_BJT, minute=0, second=0, microsecond=0)
-        if now_bjt.hour >= OVERNIGHT_START_HOUR_BJT:
+        if now_bjt.hour < OVERNIGHT_START_HOUR_BJT:
             start_bjt -= timedelta(days=1)
     else:
         end_bjt   = now_bjt.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
