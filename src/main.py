@@ -45,20 +45,27 @@ UTC = ZoneInfo("UTC")
 
 # ── 时间窗口计算 ──────────────────────────────────────────────────────────
 def get_overnight_window() -> tuple[datetime, datetime]:
-    """返回 (start_utc, end_utc)"""
-    now_bjt = datetime.now(BJT)
-
-    if now_bjt.hour < OVERNIGHT_END_HOUR_BJT:
-        end_bjt   = now_bjt.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
-        start_bjt = (now_bjt - timedelta(days=1)).replace(
-            hour=OVERNIGHT_START_HOUR_BJT, minute=0, second=0, microsecond=0
-        )
+    """
+    返回 (start_utc, end_utc)。
+    若设置了环境变量 OVERRIDE_DATE=YYYY-MM-DD，则以该日期为"当天"计算隔夜窗口，
+    用于回测历史交易日或手动测试。
+    """
+    override = os.environ.get("OVERRIDE_DATE", "").strip()
+    if override:
+        try:
+            ref_date = datetime.strptime(override, "%Y-%m-%d").replace(tzinfo=BJT)
+            logger.info(f"[window] 使用 OVERRIDE_DATE={override} 作为参考日期")
+        except ValueError:
+            logger.warning(f"[window] OVERRIDE_DATE 格式无效: {override}，回落到当前时间")
+            ref_date = datetime.now(BJT)
     else:
-        end_bjt   = now_bjt.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
-        start_bjt = now_bjt.replace(hour=OVERNIGHT_START_HOUR_BJT, minute=0, second=0, microsecond=0)
-        if now_bjt.hour < OVERNIGHT_START_HOUR_BJT:
-            start_bjt -= timedelta(days=1)
+        ref_date = datetime.now(BJT)
 
+    # 隔夜窗口 = 参考日期的前一天 20:00 BJT → 参考日期当天 06:00 BJT
+    end_bjt   = ref_date.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
+    start_bjt = (ref_date - timedelta(days=1)).replace(
+        hour=OVERNIGHT_START_HOUR_BJT, minute=0, second=0, microsecond=0
+    )
     return start_bjt.astimezone(UTC), end_bjt.astimezone(UTC)
 
 

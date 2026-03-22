@@ -10,6 +10,11 @@ on:
   # 允许手动触发（用于测试）
   workflow_dispatch:
     inputs:
+      target_date:
+        description: "目标日期 YYYY-MM-DD（留空=自动计算昨夜，填写则回测该日期的隔夜窗口）"
+        required: false
+        default: ""
+        type: string
       dry_run:
         description: "Dry run (仅采集，不推送 WeCom)"
         required: false
@@ -59,6 +64,7 @@ jobs:
           AI_MODEL:          ${{ vars.AI_MODEL || 'gpt-4o' }}
           WECOM_WEBHOOK_URL: ${{ github.event.inputs.dry_run == 'true' && '' || secrets.WECOM_WEBHOOK_URL }}
           DB_PATH:           data/overnight.db
+          OVERRIDE_DATE:     ${{ github.event.inputs.target_date }}
         run: python src/main.py
 
       # ── 上传 JSON 快照作为 Artifact（可在 Actions 界面下载） ──────────
