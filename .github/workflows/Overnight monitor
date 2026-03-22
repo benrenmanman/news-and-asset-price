@@ -1,0 +1,82 @@
+name: Overnight Market Monitor
+
+on:
+  schedule:
+    # 北京时间 07:30 = UTC 23:30 (前一天)
+    # 对应 cron: 30 23 * * * (UTC 23:30，即北京次日 07:30)
+    - cron: "30 23 * * 0-4"   # 周一至周五 UTC 23:30（对应北京周二至周六 07:30）
+
+  # 允许手动触发（用于测试）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (仅采集，不推送 WeCom)"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 从上次运行恢复 SQLite 数据库（用 cache 持久化） ──────────────
+      - name: Restore database cache
+        uses: actions/cache@v4
+        with:
+          path: data/overnight.db
+          key: overnight-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            overnight-db-${{ runner.os }}-
+
+      - name: Create data directory
+        run: mkdir -p data reports
+
+      - name: Run monitor
+        env:
+          POLYGON_API_KEY:   ${{ secrets.POLYGON_API_KEY }}
+          TWELVE_DATA_KEY:   ${{ secrets.TWELVE_DATA_KEY }}
+          # AI 服务配置 —— 切换服务商只需修改仓库的 Variables / Secrets：
+          #   Secrets → AI_API_KEY（Key，加密存储）
+          #   Variables → AI_BASE_URL（接口地址，明文）
+          #   Variables → AI_MODEL（模型名，明文）
+          AI_API_KEY:        ${{ github.event.inputs.dry_run == 'true' && '' || secrets.AI_API_KEY }}
+          AI_BASE_URL:       ${{ vars.AI_BASE_URL || 'https://api.openai.com/v1' }}
+          AI_MODEL:          ${{ vars.AI_MODEL || 'gpt-4o' }}
+          WECOM_WEBHOOK_URL: ${{ github.event.inputs.dry_run == 'true' && '' || secrets.WECOM_WEBHOOK_URL }}
+          DB_PATH:           data/overnight.db
+        run: |
+          cd src
+          python main.py
+
+      # ── 上传 JSON 快照作为 Artifact（可在 Actions 界面下载） ──────────
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: overnight-report-${{ github.run_id }}
+          path: |
+            data/report_*.json
+            data/run.log
+          retention-days: 30
+
+      # ── 上传数据库快照（供下次运行恢复） ─────────────────────────────
+      - name: Save database cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/overnight.db
+          key: overnight-db-${{ runner.os }}-${{ github.run_id }}
