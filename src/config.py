@@ -69,7 +69,7 @@ NEWS_CATEGORIES  = [
 #
 AI_CONFIG = {
     # ── 当前激活配置 ────────────────────────────────────────────────────────
-    "base_url": os.environ.get("AI_BASE_URL", "https://api.openai.com/v1"),
+    "base_url": os.environ.get("AI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
     "api_key":  os.environ.get("AI_API_KEY",  os.environ.get("OPENAI_API_KEY", "")),
     "model":    os.environ.get("AI_MODEL",    "gpt-4o"),
 
