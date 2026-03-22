@@ -71,7 +71,7 @@ AI_CONFIG = {
     # ── 当前激活配置 ────────────────────────────────────────────────────────
     "base_url": os.environ.get("AI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
     "api_key":  os.environ.get("AI_API_KEY",  os.environ.get("OPENAI_API_KEY", "")),
-    "model":    os.environ.get("AI_MODEL",    "gpt-4o"),
+    "model":    os.environ.get("AI_MODEL",    "qwen-plus"),
 
     # ── 其他服务商预设（取消注释即可切换，同时注释掉上方三行） ─────────────
     #
