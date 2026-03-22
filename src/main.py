@@ -56,7 +56,7 @@ def get_overnight_window() -> tuple[datetime, datetime]:
     else:
         end_bjt   = now_bjt.replace(hour=OVERNIGHT_END_HOUR_BJT,   minute=0, second=0, microsecond=0)
         start_bjt = now_bjt.replace(hour=OVERNIGHT_START_HOUR_BJT, minute=0, second=0, microsecond=0)
-        if now_bjt.hour >= OVERNIGHT_START_HOUR_BJT:
+        if now_bjt.hour < OVERNIGHT_START_HOUR_BJT:
             start_bjt -= timedelta(days=1)
 
     return start_bjt.astimezone(UTC), end_bjt.astimezone(UTC)
